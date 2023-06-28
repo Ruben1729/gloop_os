@@ -12,6 +12,7 @@ As explained above, I implemented some additional features:
 - Commands to create files and directories.
 - Command to navigate directories.
 - Error printing on the shell.
+- Added the ability to use the std library.
 
 ## Getting Started
 
