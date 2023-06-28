@@ -27,6 +27,7 @@ pub mod interrupts;
 pub mod shell;
 pub mod file_system;
 pub mod buffer;
+pub mod bim;
 
 mod qemu;
 pub use self::qemu::*;
@@ -36,15 +37,6 @@ pub fn init() {
     interrupts::init_idt();
     unsafe { interrupts::PICS.lock().initialize() };
     x86_64::instructions::interrupts::enable();
-
-    println!("   ____ _                      ___  ____ ");
-    println!("  / ___| | ___   ___  _ __    / _ \\/ ___| ");
-    println!(" | |  _| |/ _ \\ / _ \\| '_ \\  | | | \\___ \\ ");
-    println!(" | |_| | | (_) | (_) | |_) | | |_| |___) |");
-    println!("  \\____|_|\\___/ \\___/| .__/   \\___/|____/  ");
-    println!("                     |_|           ");
-
-    print!("> ");
 }
 
 /// Entry point for `cargo test`

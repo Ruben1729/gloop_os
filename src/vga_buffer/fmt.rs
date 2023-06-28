@@ -5,13 +5,16 @@ use spin::Mutex;
 use crate::vga_buffer::{Color, ColorCode, ScreenChar};
 
 use std::string::String;
+use x86_64::instructions::port::{Port, PortGeneric, ReadWriteAccess};
 use crate::buffer::{Buffer, infinite};
+use crate::buffer::infinite::InfiniteBuffer;
 
 lazy_static! {
     pub static ref WRITER: Mutex<Writer> = Mutex::new(Writer {
         cursor: (0, 0),
         color_code: ColorCode::new(Color::Yellow, Color::Black),
-        buffer_window: unsafe { &mut *(0xb8000 as *mut BufferWindow) }
+        buffer_window: unsafe { &mut *(0xb8000 as *mut BufferWindow) },
+        buffer: InfiniteBuffer::new(0, 0)
     });
 }
 
@@ -47,7 +50,8 @@ struct BufferWindow {
 pub struct Writer {
     cursor: (usize, usize),
     color_code: ColorCode,
-    buffer_window: &'static mut BufferWindow
+    buffer_window: &'static mut BufferWindow,
+    buffer: InfiniteBuffer
 }
 
 impl Writer {
@@ -55,58 +59,44 @@ impl Writer {
         match byte {
             b'\n' => self.new_line(),
             byte => {
-                if self.cursor.1 >= BUFFER_WIDTH {
-                    self.new_line();
-                }
-
-                let row = BUFFER_HEIGHT - 1;
-                let col = self.cursor.1.clone();
-
-                let color_code = self.color_code;
-                self.buffer_window.chars[row][col].write(ScreenChar {
-                    ascii_character: byte,
-                    color_code,
-                });
-                self.cursor.1 += 1;
+                self.buffer.write(byte as char);
+                self.focus();
             }
+        }
+    }
+
+    pub fn terminal_set_cursor(&mut self)
+    {
+        let screen_curs = self.cursor.clone();
+        let buff_curs = self.buffer.cursor.clone();
+
+        let y = (buff_curs.0 - screen_curs.0) as u16;
+        let x = (buff_curs.1 - screen_curs.1) as u16;
+
+        let pos = y * (BUFFER_WIDTH as u16) + x;
+        let mut port_inst: PortGeneric<u8, ReadWriteAccess> = Port::new(0x3D4);
+        let mut port_val: PortGeneric<u8, ReadWriteAccess> = Port::new(0x3D5);
+
+        unsafe {
+            port_inst.write(0x0F);
+            port_val.write((pos.clone() & 0xFF) as u8);
+            port_inst.write(0x0E);
+            port_val.write(((pos >> 8) & 0xFF) as u8);
         }
     }
 
     pub fn delete_byte(&mut self) {
-        if self.cursor.1 > 2 {
-            self.cursor.1 -= 1;
-        }
-
-        let row = BUFFER_HEIGHT - 1;
-        let col = self.cursor.1.clone();
-
-        let color_code = self.color_code;
-        self.buffer_window.chars[row][col].write(ScreenChar {
-            ascii_character: 0,
-            color_code,
-        });
+        self.buffer.delete_char();
+        self.focus();
     }
 
-    pub fn get_line(&self, row_pos: usize) -> String {
-        let mut line = String::new();
-
-        for col in 0..BUFFER_WIDTH {
-            let character = self.buffer_window.chars[row_pos][col].read();
-            line.push(character.ascii_character.clone() as char);
-        }
-
-        line
+    pub fn get_line(&self) -> String {
+        self.buffer.read_cursor_line().expect("Unable to get line.")
     }
 
     fn new_line(&mut self) {
-        for row in 1..BUFFER_HEIGHT {
-            for col in 0..BUFFER_WIDTH {
-                let character = self.buffer_window.chars[row][col].read();
-                self.buffer_window.chars[row - 1][col].write(character);
-            }
-        }
-        self.clear_row(BUFFER_HEIGHT - 1);
-        self.cursor.1 = 0;
+        self.buffer.write_line();
+        self.focus();
     }
 
     fn move_cursor(&mut self, dx: usize, dy: usize) {
@@ -120,13 +110,47 @@ impl Writer {
     }
 
     fn focus(&mut self) {
-        // if self.buffer.cursor.0 > self.cursor.0 {
-        //
-        // } else if {
-        //     self.cursor.0 = self.buffer.cursor.0.clone();
-        // } else if self.buffer.cursor.1 > self.cursor.1 || self.buffer.cursor.1 < self.cursor.1 {
-        //     self.cursor.1 = self.buffer.cursor.1.clone();
-        // }
+        if self.buffer.cursor.0 < self.cursor.0 {
+            self.cursor.0 = self.buffer.cursor.0.clone() - 1;
+        } else if self.buffer.cursor.0 - self.cursor.0.clone() >= BUFFER_HEIGHT {
+            self.cursor.0 = self.buffer.cursor.0.clone() - BUFFER_HEIGHT + 1;
+        } else if self.buffer.cursor.1 < self.cursor.1 {
+            self.cursor.1 = self.buffer.cursor.1.clone() - 1;
+        } else if self.buffer.cursor.1 - self.cursor.1.clone() >= BUFFER_WIDTH {
+            self.cursor.1 = self.buffer.cursor.1.clone() - BUFFER_WIDTH + 1;
+        }
+
+        let color_code = self.color_code;
+
+        for row in 0..BUFFER_HEIGHT {
+            for col in 0..BUFFER_WIDTH {
+                if let Some(character) = self.buffer.char_at((row + self.cursor.0, col + self.cursor.1)) {
+                    self.buffer_window.chars[row][col].write(ScreenChar {
+                        ascii_character: character as u8,
+                        color_code,
+                    });
+                } else {
+                    self.buffer_window.chars[row][col].write(ScreenChar {
+                        ascii_character: b' ',
+                        color_code,
+                    });
+                }
+            }
+        }
+
+        self.terminal_set_cursor();
+    }
+
+    fn clear(&mut self) {
+        let blank = ScreenChar {
+            ascii_character: b' ',
+            color_code: self.color_code,
+        };
+        for row in 0..BUFFER_HEIGHT{
+            for col in 0..BUFFER_WIDTH {
+                self.buffer_window.chars[row][col].write(blank);
+            }
+        }
     }
 
     fn clear_row(&mut self, row: usize) {

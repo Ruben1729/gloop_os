@@ -19,13 +19,11 @@ impl FileSystem {
     pub fn new(capacity: usize) -> Self {
         let root_node = INode::new(String::from("root"), INodeType::Directory);
 
-        let fs = FileSystem {
+        FileSystem {
             root: root_node.clone(),
             current_node: root_node,
             cap: capacity,
-        };
-
-        fs
+        }
     }
 
     pub fn create_node(&mut self, name: String, node_type: INodeType) {
@@ -58,11 +56,30 @@ pub fn create_folder(arguments: Vec<&str>) -> Result<(), &'static str> {
 }
 
 pub fn change_directory(arguments: Vec<&str>) -> Result<(), &'static str> {
-    if let Some(directory_name) = arguments.get(0) {
+    let mut new_node: Option<INodeRef> = None;
 
+    if let Some(directory_name) = arguments.get(0) {
+        if directory_name.eq(&"..") {
+            todo!()
+        }
+
+        for child in FILE_SYSTEM.lock().current_node.clone().unwrap().lock().children.iter() {
+            if child.clone().unwrap().lock().node_type == INodeType::File {
+                return Err("Can't navigate into files.");
+            }
+
+            if child.clone().unwrap().lock().name.eq(directory_name) {
+                new_node = Some(child.clone());
+            }
+        }
     }
 
-    Ok(())
+    if let Some(node) = new_node {
+        FILE_SYSTEM.lock().current_node = node;
+        Ok(())
+    } else {
+        Err("Unable to find directory with that name.")
+    }
 }
 
 pub fn list_inodes(arguments: Vec<&str>) -> Result<(), &'static str> {

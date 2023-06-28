@@ -80,8 +80,8 @@ pub async fn print_keypresses() {
                         if character as u8 == 8 {
                             WRITER.lock().delete_byte()
                         } else if character as u8 == 10 {
+                            let command_str = WRITER.lock().get_line();
 
-                            let command_str = WRITER.lock().get_line(BUFFER_HEIGHT-1);
                             println!();
                             let result = parse_command(command_str);
 

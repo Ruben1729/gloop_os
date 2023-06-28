@@ -7,10 +7,13 @@ pub trait Buffer {
     fn write_str(&mut self, new_line: String);
     fn write_line(&mut self);
 
-    fn read(&self) -> Option<char>;
-    fn read_line(&self) -> Option<String>;
+    fn read(&self, cursor:(usize, usize)) -> Option<char>;
+    fn read_line(&self, idx: usize) -> Option<String>;
 
-    fn delete(&mut self);
+    fn read_cursor(&self) -> Option<char>;
+    fn read_cursor_line(&self) -> Option<String>;
+
+    fn delete_char(&mut self);
 
     fn char_at(&self, cursor: (usize, usize)) -> Option<char>;
 

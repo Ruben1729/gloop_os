@@ -5,6 +5,7 @@ use spin::Mutex as SpinMutex;
 
 pub type INodeRef = Option<Arc<SpinMutex<INode>>>;
 
+#[derive(PartialEq)]
 pub enum INodeType {
     File,
     Directory
@@ -12,9 +13,9 @@ pub enum INodeType {
 
 pub struct INode {
     pub name: String,
-    size: usize,
-    node_type: INodeType,
-    file_ptr: usize,
+    pub size: usize,
+    pub node_type: INodeType,
+    pub file_ptr: usize,
     pub children: Vec<INodeRef>
 }
 

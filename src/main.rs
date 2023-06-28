@@ -6,6 +6,7 @@
 #![reexport_test_harness_main = "test_main"]
 
 use bootloader::{BootInfo, entry_point};
+use gloop_os::{println, print};
 use gloop_os::task::{executor::Executor, keyboard, Task};
 
 entry_point!(kernel_main);
@@ -28,6 +29,15 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
 
     #[cfg(test)]
     test_main();
+
+    println!("   ____ _                      ___  ____ ");
+    println!("  / ___| | ___   ___  _ __    / _ \\/ ___| ");
+    println!(" | |  _| |/ _ \\ / _ \\| '_ \\  | | | \\___ \\ ");
+    println!(" | |_| | | (_) | (_) | |_) | | |_| |___) |");
+    println!("  \\____|_|\\___/ \\___/| .__/   \\___/|____/  ");
+    println!("                     |_|           ");
+
+    print!("> ");
 
     let mut executor = Executor::new();
     executor.spawn(Task::new(keyboard::print_keypresses()));
