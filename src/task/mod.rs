@@ -8,6 +8,8 @@ use core::{
 
 pub mod executor;
 pub mod keyboard;
+pub mod bim;
+pub mod shell;
 pub mod simple_executor;
 
 pub struct Task {

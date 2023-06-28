@@ -51,7 +51,7 @@ pub struct Writer {
     cursor: (usize, usize),
     color_code: ColorCode,
     buffer_window: &'static mut BufferWindow,
-    buffer: InfiniteBuffer
+    buffer: InfiniteBuffer,
 }
 
 impl Writer {

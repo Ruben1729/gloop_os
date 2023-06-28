@@ -4,6 +4,7 @@ use core::{
     pin::Pin,
     task::{Context, Poll},
 };
+use std::cell::RefCell;
 use crossbeam_queue::ArrayQueue;
 use futures_util::{
     stream::{Stream, StreamExt},
@@ -11,6 +12,8 @@ use futures_util::{
 };
 use pc_keyboard::{layouts, DecodedKey, HandleControl, Keyboard, ScancodeSet1};
 use crate::shell::{parse_command};
+use crate::task::bim::update_bim;
+use crate::task::shell::update_shell;
 use crate::vga_buffer::{WRITER, BUFFER_HEIGHT};
 
 static SCANCODE_QUEUE: OnceCell<ArrayQueue<u8>> = OnceCell::uninit();
@@ -77,26 +80,7 @@ pub async fn print_keypresses() {
             if let Some(key) = keyboard.process_keyevent(key_event) {
                 match key {
                     DecodedKey::Unicode(character) => {
-                        if character as u8 == 8 {
-                            WRITER.lock().delete_byte()
-                        } else if character as u8 == 10 {
-                            let command_str = WRITER.lock().get_line();
-
-                            println!();
-                            let result = parse_command(command_str);
-
-                            match result {
-                                Ok(_) => {
-                                    print!("> ");
-                                }
-                                Err(e) => {
-                                    print!("ERROR: {}\n> ", e);
-                                }
-                            }
-
-                        } else {
-                            print!("{}", character);
-                        }
+                        update_shell(character);
                     },
                     DecodedKey::RawKey(key) => { print!("{:?}", key) },
                 }

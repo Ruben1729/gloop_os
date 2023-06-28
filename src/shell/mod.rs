@@ -20,7 +20,7 @@ lazy_static! {
         (String::from("cd"), 1, change_directory),
         (String::from("ls"), 0, list_inodes),
         (String::from("mkfile"), 1, create_file),
-        (String::from("mkdir"), 1, create_folder)
+        (String::from("mkdir"), 1, create_folder),
     ];
 }
 
