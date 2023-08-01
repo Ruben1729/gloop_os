@@ -27,8 +27,8 @@ impl FileSystem {
     }
 
     pub fn create_node(&mut self, name: String, node_type: INodeType) {
-        let new_node = INode::new(name, node_type);
         if let Some(parent) = &self.current_node {
+            let new_node = INode::new(name, node_type);
             let mut locked_parent = parent.lock();
             locked_parent.add_child(new_node);
         }

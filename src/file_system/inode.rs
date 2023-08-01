@@ -30,7 +30,7 @@ impl INode {
         })))
     }
 
-    pub fn add_child(&mut self, new_node: INodeRef) {
-        self.children.push(new_node);
+    pub fn add_child(&mut self, new_node_r: INodeRef) {
+        self.children.push(new_node_r);
     }
 }

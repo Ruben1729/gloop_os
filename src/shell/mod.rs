@@ -5,6 +5,7 @@ use std::vec::Vec;
 use std::vec;
 
 use crate::file_system::*;
+use crate::vga_buffer::WRITER;
 
 pub const COMMAND_ARG_MAX: usize = 100;
 pub const COMMANDS_LEN_MAX: usize = 500;
@@ -21,6 +22,7 @@ lazy_static! {
         (String::from("ls"), 0, list_inodes),
         (String::from("mkfile"), 1, create_file),
         (String::from("mkdir"), 1, create_folder),
+        (String::from("vim"), 1, open_editor)
     ];
 }
 
@@ -41,4 +43,9 @@ pub fn parse_command(command_str: String) -> Result<(), &'static str> {
     }
 
     Err("Unable to find command.")
+}
+
+pub fn open_editor(arguments: Vec<&str>) -> Result<(), &'static str> {
+    WRITER.lock().clear();
+    Ok(())
 }

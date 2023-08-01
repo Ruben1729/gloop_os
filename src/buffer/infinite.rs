@@ -107,4 +107,9 @@ impl Buffer for InfiniteBuffer {
         self.cursor.0 = x;
         self.cursor.1 = y;
     }
+
+    fn clear(&mut self) {
+        self.lines.clear();
+        self.cursor = (0,0);
+    }
 }

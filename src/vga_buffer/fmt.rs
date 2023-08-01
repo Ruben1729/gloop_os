@@ -141,11 +141,13 @@ impl Writer {
         self.terminal_set_cursor();
     }
 
-    fn clear(&mut self) {
+    pub fn clear(&mut self) {
         let blank = ScreenChar {
             ascii_character: b' ',
             color_code: self.color_code,
         };
+        self.buffer.clear();
+
         for row in 0..BUFFER_HEIGHT{
             for col in 0..BUFFER_WIDTH {
                 self.buffer_window.chars[row][col].write(blank);

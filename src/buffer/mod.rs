@@ -19,4 +19,5 @@ pub trait Buffer {
 
     fn move_cursor(&mut self, dx: usize, dy: usize);
     fn move_cursor_to(&mut self, x: usize, y: usize);
+    fn clear(&mut self);
 }
